@@ -47,3 +47,15 @@ GET {{SyncBridge.Api_HostAddress}}/health/ready
 ### Get all orders
 GET {{SyncBridge.Api_HostAddress}}/api/orders
 Accept: application/json
+
+### First orders
+GET {{SyncBridge.Api_HostAddress}}/api/orders
+
+### Second page of orders with page size of 5
+GET {{SyncBridge.Api_HostAddress}}/api/orders?pageNumber=2&pageSize=5
+
+### Invalid page number
+GET {{SyncBridge.Api_HostAddress}}/api/orders?pageNumber=0
+
+### Page size too large
+GET {{SyncBridge.Api_HostAddress}}/api/orders?pageNumber=1&pageSize=101
