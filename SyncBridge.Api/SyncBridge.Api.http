@@ -4,3 +4,33 @@ GET {{SyncBridge.Api_HostAddress}}/api/health
 Accept: application/json
 
 ###
+
+### Create an order
+POST {{SyncBridge.Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "externalId": "SHOP-2001",
+  "customerName": "Test Customer",
+  "totalAmount": 149.99
+}
+
+### Check the order was created
+POST {{SyncBridge.Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "externalId": "SHOP-2001",
+  "customerName": "Test Customer",
+  "totalAmount": 149.99
+}
+
+### Check the order was created
+POST {{SyncBridge.Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "externalId": "",
+  "customerName": "Test Customer",
+  "totalAmount": 149.99
+}
