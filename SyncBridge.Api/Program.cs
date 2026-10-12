@@ -4,6 +4,8 @@ using SyncBridge.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -17,6 +19,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
+
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
+
+app.MapHealthChecks("/health/ready");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
