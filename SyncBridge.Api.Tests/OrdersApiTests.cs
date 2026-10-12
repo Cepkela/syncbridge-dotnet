@@ -128,7 +128,36 @@ public class OrdersApiTests
     }
 
 
+    [Fact]
+    public async Task GetOrders_ReturnsOkWithOrderList()
+    {
+        var createRequest = new
+        {
+            externalId = $"EXT-{Guid.NewGuid()}",
+            customerName = "Test Customer",
+            totalAmount = 125.50m
+        };
 
+        var createResponse = await _client.PostAsJsonAsync(
+            "/api/orders",
+            createRequest);
+
+        createResponse.EnsureSuccessStatusCode();
+
+        var response = await _client.GetAsync("/api/orders");
+
+        Assert.Equal(
+            System.Net.HttpStatusCode.OK,
+            response.StatusCode);
+
+        var orders = await response.Content
+            .ReadFromJsonAsync<List<Models.Order>>();
+
+        Assert.NotNull(orders);
+        Assert.Contains(
+            orders,
+            order => order.ExternalId == createRequest.externalId);
+    }
 
     private record OrderResponse(
         int Id,

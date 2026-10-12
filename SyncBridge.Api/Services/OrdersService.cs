@@ -16,6 +16,9 @@ public interface IOrdersService
     Task<Order?> GetByIdAsync(
         int id,
         CancellationToken cancellationToken);
+
+    Task<List<Order>> GetAllAsync(
+        CancellationToken cancellationToken);
 }
 
 public class OrdersService : IOrdersService
@@ -67,6 +70,15 @@ public class OrdersService : IOrdersService
             .FirstOrDefaultAsync(
                 order => order.Id == id,
                 cancellationToken);
+    }
+
+    public async Task<List<Order>> GetAllAsync(
+    CancellationToken cancellationToken)
+    {
+        return await _dbContext.Orders
+            .AsNoTracking()
+            .OrderBy(order => order.Id)
+            .ToListAsync(cancellationToken);
     }
 }
 public sealed class DuplicateOrderException(string externalId)

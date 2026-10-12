@@ -85,6 +85,14 @@ public class OrdersController : ControllerBase
 
         return Ok(order);
     }
+
+    [HttpGet]
+    public async Task<ActionResult<List<Order>>> GetAllOrders(
+        CancellationToken cancellationToken)
+    {
+        var orders = await _ordersService.GetAllAsync(cancellationToken);
+        return Ok(orders);
+    }
 }
 
 public record CreateOrderRequest(

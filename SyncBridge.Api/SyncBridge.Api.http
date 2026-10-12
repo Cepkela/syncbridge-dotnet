@@ -43,3 +43,7 @@ GET {{SyncBridge.Api_HostAddress}}/health/live
 
 ### API and DB health check
 GET {{SyncBridge.Api_HostAddress}}/health/ready
+
+### Get all orders
+GET {{SyncBridge.Api_HostAddress}}/api/orders
+Accept: application/json
