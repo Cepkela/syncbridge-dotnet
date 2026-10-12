@@ -10,7 +10,7 @@ POST {{SyncBridge.Api_HostAddress}}/api/orders
 Content-Type: application/json
 
 {
-  "externalId": "SHOP-2001",
+  "externalId": "SHOP-2002",
   "customerName": "Test Customer",
   "totalAmount": 149.99
 }
@@ -20,7 +20,7 @@ POST {{SyncBridge.Api_HostAddress}}/api/orders
 Content-Type: application/json
 
 {
-  "externalId": "SHOP-2001",
+  "externalId": "SHOP-2002",
   "customerName": "Test Customer",
   "totalAmount": 149.99
 }

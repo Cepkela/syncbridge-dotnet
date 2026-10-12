@@ -61,7 +61,18 @@ public class OrdersController : ControllerBase
 
         _dbContext.Orders.Add(order);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+            when (ex.GetBaseException() is Microsoft.Data.SqlClient.SqlException sqlException
+                  && (sqlException.Number == 2601
+                      || sqlException.Number == 2627))
+        {
+            return Conflict(
+                $"An order with ExternalId '{externalId}' already exists.");
+        }
 
         return CreatedAtAction(
             nameof(GetById),
