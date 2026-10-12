@@ -1,182 +1,118 @@
-# \# SyncBridge
+SyncBridge
 
-# 
+A .NET Web API for managing orders received from external systems.
 
-# A .NET Web API for managing orders received from external systems.
+Overview
 
-# 
+SyncBridge is a portfolio project demonstrating how to build a maintainable ASP.NET Core API with persistent storage, input validation, duplicate detection, and automated integration tests.
 
-# \## Overview
+Features
 
-# 
+Create orders through a REST API
 
-# SyncBridge is a portfolio project demonstrating how to build a maintainable ASP.NET Core API with persistent storage, input validation, duplicate detection, and automated integration tests.
+Retrieve orders by ID
 
-# 
+Validate incoming request data
 
-# \## Features
+Prevent duplicate external order IDs
 
-# 
+Persist data using Entity Framework Core and SQL Server
 
-# \- Create orders through a REST API
+Separate business logic into a service layer
 
-# \- Retrieve orders by ID
+Return appropriate HTTP status codes
 
-# \- Validate incoming request data
+Run automated API integration tests
 
-# \- Prevent duplicate external order IDs
+Tech Stack
 
-# \- Persist data using Entity Framework Core and SQL Server
+C#
 
-# \- Separate business logic into a service layer
+.NET 10
 
-# \- Return appropriate HTTP status codes
+ASP.NET Core Web API
 
-# \- Run automated API integration tests
+Entity Framework Core
 
-# 
+SQL Server
 
-# \## Tech Stack
+xUnit
 
-# 
+ASP.NET Core integration testing
 
-# \- C#
+API Endpoints
 
-# \- .NET 10
+Method
 
-# \- ASP.NET Core Web API
+Endpoint
 
-# \- Entity Framework Core
+Description
 
-# \- SQL Server
+GET
 
-# \- xUnit
+/api/health
 
-# \- ASP.NET Core integration testing
+Check API health
 
-# 
+POST
 
-# \## API Endpoints
+/api/orders
 
-# 
+Create an order
 
-# | Method | Endpoint | Description |
+GET
 
-# |---|---|---|
+/api/orders/{id}
 
-# | GET | `/api/health` | Check API health |
+Retrieve an order by ID
 
-# | POST | `/api/orders` | Create an order |
+Example: Create an Order
 
-# | GET | `/api/orders/{id}` | Retrieve an order by ID |
+Request:
 
-# 
+POST /api/orders
+Content-Type: application/json
 
-# \## Example: Create an Order
+{
+  "externalId": "EXT-1001",
+  "customerName": "Example Customer",
+  "totalAmount": 149.99
+}
 
-# 
+A successful request returns 201 Created.
 
-# Request:
+An invalid request returns 400 Bad Request. An order with an existing external ID returns 409 Conflict.
 
-# 
+Running Locally
 
-# ```http
+Install the .NET 10 SDK.
 
-# POST /api/orders
+Configure the SQL Server connection string in appsettings.json.
 
-# Content-Type: application/json
+Apply database migrations:
 
-# ```
+dotnet ef database update --project SyncBridge.Api
 
-# 
+Run the API:
 
-# ```json
+dotnet run --project SyncBridge.Api
 
-# {
+Run the tests from the solution directory:
 
-# &#x20; "externalId": "EXT-1001",
+dotnet test
 
-# &#x20; "customerName": "Example Customer",
+Project Structure
 
-# &#x20; "totalAmount": 149.99
+Controllers/ — HTTP endpoints
 
-# }
+Services/ — business logic
 
-# ```
+Models/ — domain models
 
-# 
+Data/ — Entity Framework Core database context
 
-# A successful request returns `201 Created`.
+SyncBridge.Api.Tests/ — automated API tests
 
-# 
+Purpose
 
-# An invalid request returns `400 Bad Request`. An order with an existing external ID returns `409 Conflict`.
-
-# 
-
-# \## Running Locally
-
-# 
-
-# 1\. Install the .NET 10 SDK.
-
-# 2\. Configure the SQL Server connection string in `appsettings.json`.
-
-# 3\. Apply database migrations:
-
-# 
-
-# &#x20;  ```bash
-
-# &#x20;  dotnet ef database update --project SyncBridge.Api
-
-# &#x20;  ```
-
-# 
-
-# 4\. Run the API:
-
-# 
-
-# &#x20;  ```bash
-
-# &#x20;  dotnet run --project SyncBridge.Api
-
-# &#x20;  ```
-
-# 
-
-# 5\. Run the tests from the solution directory:
-
-# 
-
-# &#x20;  ```bash
-
-# &#x20;  dotnet test
-
-# &#x20;  ```
-
-# 
-
-# \## Project Structure
-
-# 
-
-# \- `Controllers/` — HTTP endpoints
-
-# \- `Services/` — business logic
-
-# \- `Models/` — domain models
-
-# \- `Data/` — Entity Framework Core database context
-
-# \- `SyncBridge.Api.Tests/` — automated API tests
-
-# 
-
-# \## Purpose
-
-# 
-
-# This project is being developed to demonstrate practical .NET API development, clean separation of responsibilities, database integration, and reliable handling of invalid and duplicate requests.
-
+This project is being developed to demonstrate practical .NET API development, clean separation of responsibilities, database integration, and reliable handling of invalid and duplicate requests.
