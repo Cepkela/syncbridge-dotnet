@@ -1,8 +1,9 @@
 ﻿
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SyncBridge.Api.Data;
+using Microsoft.Data.SqlClient;
 using SyncBridge.Api.Models;
+using SyncBridge.Api.Services;
 
 namespace SyncBridge.Api.Controllers;
 
@@ -10,11 +11,11 @@ namespace SyncBridge.Api.Controllers;
 [Route("api/[controller]")]
 public class OrdersController : ControllerBase
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IOrdersService _ordersService;
 
-    public OrdersController(AppDbContext dbContext)
+    public OrdersController(IOrdersService ordersService)
     {
-        _dbContext = dbContext;
+        _ordersService = ordersService;
     }
 
     [HttpPost]
@@ -40,44 +41,32 @@ public class OrdersController : ControllerBase
         var externalId = request.ExternalId.Trim();
         var customerName = request.CustomerName.Trim();
 
-        var duplicateExists = await _dbContext.Orders
-            .AnyAsync(
-                order => order.ExternalId == externalId,
-                cancellationToken);
-
-        if (duplicateExists)
-        {
-            return Conflict(
-                $"An order with ExternalId '{externalId}' already exists.");
-        }
-
-        var order = new Order
-        {
-            ExternalId = externalId,
-            CustomerName = customerName,
-            TotalAmount = request.TotalAmount,
-            CreatedAtUtc = DateTime.UtcNow
-        };
-
-        _dbContext.Orders.Add(order);
-
         try
         {
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            var order = await _ordersService.CreateAsync(
+                externalId,
+                customerName,
+                request.TotalAmount,
+                cancellationToken);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = order.Id },
+                order);
         }
         catch (DbUpdateException ex)
-            when (ex.GetBaseException() is Microsoft.Data.SqlClient.SqlException sqlException
+            when (ex.GetBaseException() is SqlException sqlException
                   && (sqlException.Number == 2601
                       || sqlException.Number == 2627))
         {
             return Conflict(
                 $"An order with ExternalId '{externalId}' already exists.");
         }
-
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = order.Id },
-            order);
+        catch (DuplicateOrderException)
+        {
+            return Conflict(
+                $"An order with ExternalId '{externalId}' already exists.");
+        }
     }
 
     [HttpGet("{id:int}")]
@@ -85,11 +74,9 @@ public class OrdersController : ControllerBase
         int id,
         CancellationToken cancellationToken)
     {
-        var order = await _dbContext.Orders
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                order => order.Id == id,
-                cancellationToken);
+        var order = await _ordersService.GetByIdAsync(
+            id,
+            cancellationToken);
 
         if (order is null)
         {
