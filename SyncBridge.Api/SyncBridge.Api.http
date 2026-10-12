@@ -34,3 +34,11 @@ Content-Type: application/json
   "customerName": "Test Customer",
   "totalAmount": 149.99
 }
+
+### Get order by id
+GET {{SyncBridge.Api_HostAddress}}/api/orders/1
+Content-Type: application/json
+
+### Get order by id
+GET {{SyncBridge.Api_HostAddress}}/api/orders/9
+Content-Type: application/json

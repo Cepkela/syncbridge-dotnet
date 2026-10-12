@@ -92,6 +92,44 @@ public class OrdersApiTests
     }
 
 
+    [Fact]
+    public async Task GetOrder_WhenOrderDoesNotExist_ReturnsNotFound()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/orders/9999");
+
+        // Assert
+        Assert.Equal(
+            System.Net.HttpStatusCode.NotFound,
+            response.StatusCode);
+    }
+
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-10)]
+    public async Task CreateOrder_WhenAmountIsInvalid_ReturnsBadRequest(
+        decimal totalAmount)
+    {
+        var request = new
+        {
+            externalId = $"EXT-{Guid.NewGuid()}",
+            customerName = "Test Customer",
+            totalAmount
+        };
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/orders",
+            request);
+
+        Assert.Equal(
+            System.Net.HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+
+
+
+
     private record OrderResponse(
         int Id,
         string ExternalId,
