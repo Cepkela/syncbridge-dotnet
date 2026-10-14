@@ -58,16 +58,23 @@ public class OrdersApiTests
         {
             externalId = "",
             customerName = "Test Customer",
-            totalAmount = 149.99m
+            totalAmount = 100m
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/orders",
-            request);
+            "/api/orders", request);
 
         Assert.Equal(
             HttpStatusCode.BadRequest,
             response.StatusCode);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+
+        Assert.NotNull(body);
+        Assert.Equal(400, body.Status);
+        Assert.Equal("Bad request", body.Title);
+        Assert.Equal("ExternalId is required.", body.Detail);
     }
 
     [Fact]
@@ -75,39 +82,56 @@ public class OrdersApiTests
     {
         var request = new
         {
-            externalId = "TEST-DUPLICATE-1001",
+            externalId = $"DUP-{Guid.NewGuid()}",
             customerName = "Test Customer",
-            totalAmount = 149.99m
+            totalAmount = 100m
         };
 
         var firstResponse = await _client.PostAsJsonAsync(
-            "/api/orders",
-            request);
-
-        var secondResponse = await _client.PostAsJsonAsync(
-            "/api/orders",
-            request);
+            "/api/orders", request);
 
         Assert.Equal(
             HttpStatusCode.Created,
             firstResponse.StatusCode);
 
+        var secondResponse = await _client.PostAsJsonAsync(
+            "/api/orders", request);
+
         Assert.Equal(
             HttpStatusCode.Conflict,
             secondResponse.StatusCode);
+
+        var body = await secondResponse.Content
+            .ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+
+        Assert.NotNull(body);
+        Assert.Equal(409, body.Status);
+        Assert.Equal("Duplicate order", body.Title);
+        Assert.Equal(
+            $"An order with ExternalId '{request.externalId}' already exists.",
+            body.Detail);
     }
 
 
     [Fact]
     public async Task GetOrder_WhenOrderDoesNotExist_ReturnsNotFound()
     {
-        // Act
-        var response = await _client.GetAsync("/api/orders/9999");
+        var response = await _client.GetAsync(
+        "/api/orders/999999/sync-attempts");
 
-        // Assert
         Assert.Equal(
-            System.Net.HttpStatusCode.NotFound,
+            HttpStatusCode.NotFound,
             response.StatusCode);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+
+        Assert.NotNull(body);
+        Assert.Equal(404, body.Status);
+        Assert.Equal("Order not found", body.Title);
+        Assert.Equal(
+            "Order with ID 999999 was not found.",
+            body.Detail);
     }
 
 
@@ -257,6 +281,81 @@ public class OrdersApiTests
             "/api/orders/999999/sync-attempts");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task CreateOrder_WithEmptyCustomerName_ReturnsBadRequest(
+    string customerName)
+    {
+        var request = new
+        {
+            externalId = $"CUSTOMER-{Guid.NewGuid()}",
+            customerName,
+            totalAmount = 100m
+        };
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/orders", request);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public async Task GetOrders_WhenPageSizeIsOutOfRange_ReturnsBadRequest(
+    int pageSize)
+    {
+        var response = await _client.GetAsync(
+            $"/api/orders?pageNumber=1&pageSize={pageSize}");
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GetOrders_WhenPageNumberIsInvalid_ReturnsBadRequest(
+    int pageNumber)
+    {
+        var response = await _client.GetAsync(
+            $"/api/orders?pageNumber={pageNumber}&pageSize=10");
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithMalformedJson_ReturnsBadRequest()
+    {
+        using var content = new StringContent(
+            """{"externalId": "TEST-1", "totalAmount": """,
+            System.Text.Encoding.UTF8,
+            "application/json");
+           
+        var response = await _client.PostAsync(
+            "/api/orders", content);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+
+        Assert.Equal(
+    "application/problem+json",
+    response.Content.Headers.ContentType?.MediaType);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+
+        Assert.NotNull(body);
+        Assert.Equal(400, body.Status);
     }
 
     private record SyncAttemptResponse(

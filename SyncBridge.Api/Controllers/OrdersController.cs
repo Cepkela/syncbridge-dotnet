@@ -23,17 +23,17 @@ public class OrdersController : ControllerBase
 	{
 		if (string.IsNullOrWhiteSpace(request.ExternalId))
 		{
-			return BadRequest("ExternalId is required.");
-		}
+            return BadRequest(BadRequestProblem("ExternalId is required."));
+        }
 
 		if (string.IsNullOrWhiteSpace(request.CustomerName))
 		{
-			return BadRequest("CustomerName is required.");
-		}
+            return BadRequest(BadRequestProblem("CustomerName is required."));
+        }
 
 		if (request.TotalAmount <= 0)
 		{
-			return BadRequest("TotalAmount must be greater than zero.");
+			return BadRequest(BadRequestProblem("TotalAmount must be greater than zero."));
 		}
 
 		var externalId = request.ExternalId.Trim();
@@ -57,14 +57,22 @@ public class OrdersController : ControllerBase
 				  && (sqlException.Number == 2601
 					  || sqlException.Number == 2627))
 		{
-			return Conflict(
-				$"An order with ExternalId '{externalId}' already exists.");
-		}
+            return Conflict(new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Duplicate order",
+                Detail = $"An order with ExternalId '{externalId}' already exists."
+            });
+        }
 		catch (DuplicateOrderException)
 		{
-			return Conflict(
-				$"An order with ExternalId '{externalId}' already exists.");
-		}
+            return Conflict(new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Duplicate order",
+                Detail = $"An order with ExternalId '{externalId}' already exists."
+            });
+        }
 	}
 
 	[HttpGet("{id:int}")]
@@ -76,8 +84,8 @@ public class OrdersController : ControllerBase
 
 		if (order is null)
 		{
-			return NotFound();
-		}
+            return NotFound(OrderNotFound(id));
+        }
 
 		return Ok(order);
 	}
@@ -92,12 +100,12 @@ public class OrdersController : ControllerBase
     {
         if (pageNumber < 1)
         {
-            return BadRequest("pageNumber must be greater than zero.");
+            return BadRequest(BadRequestProblem("pageNumber must be greater than zero."));
         }
 
         if (pageSize < 1 || pageSize > 100)
         {
-            return BadRequest("pageSize must be between 1 and 100.");
+            return BadRequest(BadRequestProblem("pageSize must be between 1 and 100."));
         }
 
         var orders = await _ordersService.GetAllAsync(
@@ -115,12 +123,32 @@ public class OrdersController : ControllerBase
 
         if (order is null)
         {
-            return NotFound();
+            return NotFound(OrderNotFound(id));
         }
 
         var attempts = await _ordersService.GetSyncAttemptsAsync(id, cancellationToken);
 
 		return Ok(attempts);
+	}
+
+    private static ProblemDetails OrderNotFound(int id)
+    {
+        return new ProblemDetails
+        {
+            Status = StatusCodes.Status404NotFound,
+            Title = "Order not found",
+            Detail = $"Order with ID {id} was not found."
+        };
+    }
+
+	private static ProblemDetails BadRequestProblem(string detail)
+	{
+		return new ProblemDetails
+		{
+			Status = StatusCodes.Status400BadRequest,
+			Title = "Bad request",
+			Detail = detail
+		};
 	}
 }
 
