@@ -12,6 +12,8 @@ public interface IOrdersService
 	Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
 	Task<List<Order>> GetAllAsync(int pageSize = 10, int pageNumber = 1, CancellationToken cancellationToken = default);
+
+    Task<List<OrderSyncAttempt>> GetSyncAttemptsAsync(int orderId, CancellationToken cancellationToken);
 }
 
 public class OrdersService : IOrdersService
@@ -32,23 +34,45 @@ public class OrdersService : IOrdersService
 
 		if (duplicateExists)
 		{
-			throw new DuplicateOrderException(externalId);
+            var syncAttemptWithDuplicate = new OrderSyncAttempt
+            {
+                ExternalId = externalId,
+                Status = "Duplicate",
+                AttemptedAtUtc = DateTime.UtcNow,
+                Message = "An order with this ExternalId already exists."
+            };
+
+            _dbContext.OrderSyncAttempts.Add(syncAttemptWithDuplicate);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            throw new DuplicateOrderException(externalId);
 		}
 
-		var order = new Order
-		{
-			ExternalId = externalId,
-			CustomerName = customerName,
-			TotalAmount = totalAmount,
-			CreatedAtUtc = DateTime.UtcNow
-		};
+        var order = new Order
+        {
+            ExternalId = externalId,
+            CustomerName = customerName,
+            TotalAmount = totalAmount,
+            CreatedAtUtc = DateTime.UtcNow
+        };
 
-		_dbContext.Orders.Add(order);
+        var syncAttempt = new OrderSyncAttempt
+        {
+            ExternalId = externalId,
+            Status = "Succeeded",
+            AttemptedAtUtc = DateTime.UtcNow,
+            Message = "Order created successfully.",
+            Order = order
+        };
 
-		await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.Orders.Add(order);
+        _dbContext.OrderSyncAttempts.Add(syncAttempt);
 
-		return order;
-	}
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return order;
+    }
 
 	public async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken)
 	{
@@ -58,8 +82,6 @@ public class OrdersService : IOrdersService
 				order => order.Id == id,
 				cancellationToken);
 	}
-
-
 
 	public async Task<List<Order>> GetAllAsync(int pageNumber, int pageSize, CancellationToken cancellationToken)
 	{
@@ -73,6 +95,15 @@ public class OrdersService : IOrdersService
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
 	}
+
+    public async Task<List<OrderSyncAttempt>> GetSyncAttemptsAsync(int orderId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.OrderSyncAttempts
+            .AsNoTracking()
+            .Where(attempt => attempt.OrderId == orderId)
+            .OrderByDescending(attempt => attempt.AttemptedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
 }
 public sealed class DuplicateOrderException(string externalId)
 	: Exception($"An order with ExternalId '{externalId}' already exists.");

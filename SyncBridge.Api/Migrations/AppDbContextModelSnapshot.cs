@@ -52,6 +52,47 @@ namespace SyncBridge.Api.Migrations
 
                     b.ToTable("Orders");
                 });
+
+            modelBuilder.Entity("SyncBridge.Api.Models.OrderSyncAttempt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AttemptedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderSyncAttempts");
+                });
+
+            modelBuilder.Entity("SyncBridge.Api.Models.OrderSyncAttempt", b =>
+                {
+                    b.HasOne("SyncBridge.Api.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId");
+
+                    b.Navigation("Order");
+                });
 #pragma warning restore 612, 618
         }
     }

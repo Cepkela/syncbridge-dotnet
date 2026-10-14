@@ -15,7 +15,7 @@ POST {{SyncBridge.Api_HostAddress}}/api/orders
 Content-Type: application/json
 
 {
-  "externalId": "SHOP-2002",
+  "externalId": "SHOP-2005",
   "customerName": "Test Customer",
   "totalAmount": 149.99
 }

@@ -108,7 +108,20 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+	[HttpGet("{id:int}/sync-attempts")]
+	public async Task<ActionResult<List<OrderSyncAttempt>>> GetSyncAttempts(int id, CancellationToken cancellationToken)
+	{
+        var order = await _ordersService.GetByIdAsync(id, cancellationToken);
 
+        if (order is null)
+        {
+            return NotFound();
+        }
+
+        var attempts = await _ordersService.GetSyncAttemptsAsync(id, cancellationToken);
+
+		return Ok(attempts);
+	}
 }
 
 public record CreateOrderRequest(
